@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <array>
-#include <typeinfo>
-#include <algorithm>
+
 #include <cctype>
 #include <random>
 #include <chrono>
@@ -161,22 +160,26 @@ class Game {
 
 void mainGameLoop(Game game);
 
-void won(){
-    std::cout<<"You Won!!"<<std::endl
-    <<"wanna play again? (y/n)"<<std::endl;
-
+void playAgain(){
     while(true){
         std::string input;
         std::cin>>input;
 
-        if(input.size() == 0) break;
+        if(input.size() == 0) return;
 
         char choice = input[0];
 
-        if(choice == 'Y' || choice == 'y') break;
+        if(choice == 'Y' || choice == 'y') return;
 
         else exit(0);
     }
+}
+
+void won(){
+    std::cout<<"You Won!!"<<std::endl
+    <<"wanna play again? (y/n)"<<std::endl;
+
+    playAgain();
     mainGameLoop(Game());
 }
 
@@ -184,14 +187,8 @@ void won(){
 void lost(){
     std::cout<<"You Lost :("<<std::endl
     <<"wanna try again? (y/n)"<<std::endl;
-    while(true){
-        std::string input;
-        std::cin>>input;
-        if(input.size() == 0) break;
-        char choice = input[0];
-        if(choice == 'Y' || choice == 'y') break;
-        else exit(0);
-    }
+
+    playAgain();
     mainGameLoop(Game());
 }
 
