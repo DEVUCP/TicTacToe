@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <random>
+#include <chrono>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -21,20 +22,16 @@ void platform_sleep(unsigned int seconds) {
 #endif
 }
 
-std::string username;
+const std::string RED = "\033[31m";
+const std::string BLUE = "\033[34m";
+const std::string RESET = "\033[0m";
 
 
-enum menuChoices{
-    LEADERBOARD, NEWGAME, QUIT, CONTINUE
-};
+std::mt19937 createRNG() {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
-enum gameEndStatus{
-    WIN, LOSS, TIE, INTERRUPT
-};
-
-const std::string LOGIN_MESSAGE = "Welcome to Tic-Tac-Toe\nEnter username to login: ";
-const std::string MENU_MESSAGE = "\t\t-- MAIN MENU --\n\tchoose an option by entering it's number..\n1) Leaderboard\n2 ) New game\n3 ) Quit\n";
-
+    return std::mt19937(seed);
+}
 
 class Game {
     static char constexpr symbols[2] = {'X', 'O'};
@@ -53,15 +50,13 @@ class Game {
                 {' ',' ',' '}
             }};
             player = 'U';
-            computer = 'U';
-            status = INTERRUPT;}
+            computer = 'U';}
 
         // for when loading \/
-        Game(std::array<std::array<char, 3>, 3> new_board, char p_symbol, char c_symbol, int n_status) {
+        Game(std::array<std::array<char, 3>, 3> new_board, char p_symbol, char c_symbol) {
             board = new_board;
             player = p_symbol;
-            computer = c_symbol;
-            n_status = status;}
+            computer = c_symbol;}
 
         // Getters
         std::array<std::array<char, 3>, 3> getBoard() {return board;}
@@ -69,8 +64,6 @@ class Game {
         char getPlayer() {return player;}
 
         char getComputer() {return computer;}
-
-        int getStatus() {return status;}
 
         std::string getBoardDisplay() {
             std::string display = "";
@@ -80,12 +73,16 @@ class Game {
 
                 for(int j = 0; j < 3; j++){
 
+                    std::string color;
+
+                    if(board[i][j] == player) color = BLUE;
+                    if(board[i][j] == computer) color = RED;
+
                     if(j == 1) display += "|";
 
-                    display += "  ";
-                    std::cout<<board[i][j]<<" from "<<i<<j<<std::endl;
+                    display += "  " + color; // Adds spacing and color
                     display.append(1,board[i][j]);
-                    display += "  ";
+                    display += "  " + RESET; // Adds spacing and removes color
                     
 
                     if(j == 1) display += "|";
@@ -99,8 +96,6 @@ class Game {
         void setPlayer(char newPlayer) {player = newPlayer;}
 
         void setComputer(char newComputer) {computer = newComputer;}
-
-        void setStatus(int newStatus) {status = newStatus;}
 
         // Rest of the methods
         
@@ -164,33 +159,41 @@ class Game {
         }
 };
 
+void mainGameLoop(Game game);
+
 void won(){
-    std::cout<<"You Won!!"<<std::endl;
-}
-void lost(){
-    std::cout<<"You Lost :("<<std::endl;
-}
+    std::cout<<"You Won!!"<<std::endl
+    <<"wanna play again? (y/n)"<<std::endl;
 
-void displayLeaderBoard(){
-    std::cout<<"here would be a leader board"<<std::endl;
-}
+    while(true){
+        std::string input;
+        std::cin>>input;
 
-int getMenuChoice() {
-    std::string input;
-    int choice;
-    while (true) {
-        std::cout << MENU_MESSAGE;
-        std::cin >> input;
+        if(input.size() == 0) break;
 
-        if (input.length() == 1 && input[0] >= '1' && input[0] <= '3') {
-            choice = input[0] - '0';
-            return choice;
-        } else {
-            std::cout << "Invalid input. Please enter a number between 1 and 3." << std::endl;
-        }
+        char choice = input[0];
+
+        if(choice == 'Y' || choice == 'y') break;
+
+        else exit(0);
     }
+    mainGameLoop(Game());
 }
 
+
+void lost(){
+    std::cout<<"You Lost :("<<std::endl
+    <<"wanna try again? (y/n)"<<std::endl;
+    while(true){
+        std::string input;
+        std::cin>>input;
+        if(input.size() == 0) break;
+        char choice = input[0];
+        if(choice == 'Y' || choice == 'y') break;
+        else exit(0);
+    }
+    mainGameLoop(Game());
+}
 
 char getSymbolChoice(){
     std::string input;
@@ -207,7 +210,7 @@ char getSymbolChoice(){
 void doPlayerMove(Game &game){
     std::cout<<game.getBoardDisplay()<<std::endl;
     while(true){
-        std::cout<<"\nYour move ? -> "<<std::endl;
+        std::cout<<"\nYour move ? (x , y) -> "<<std::endl;
         int x, y;
         std::string coord;
         std::cin>>coord;
@@ -221,90 +224,56 @@ void doPlayerMove(Game &game){
         
         if(!game.UpdateBoard(x,y, game.getPlayer())){std::cout<<game.getBoardDisplay()<<std::endl<<"Invalid coord"; continue;}
         
-        std::cout<<game.getPlayer()<<std::endl;
         break;
     }
     
 }
 
-void doCompMove(Game &game){
+void doCompMove(Game &game) {
     std::random_device rd;
-    std::uniform_int_distribution<int> slots(0,3);
+    auto gen = createRNG();
+    std::uniform_int_distribution<int> slots(0, 3);
+
     int x = -1;
     int y = -1;
-    int c = 0;
-    while(!game.IsCoordAvalaible(x,y)){
-        x = slots(rd);
-        y = slots(rd);
-        if(c>20){break;}
+    while (!game.IsCoordAvalaible(x, y)) {
+        x = slots(gen);
+        y = slots(gen);
     }
-    game.UpdateBoard(x,y, game.getComputer());
+    game.UpdateBoard(x, y, game.getComputer());
 }
 
 
-int mainGameLoop(std::string username = "", Game game = Game()){
+void mainGameLoop(Game game = Game()){
 
-    std::cout<<"main game loop reached"<<std::endl;
     game.setPlayerAdvanced(getSymbolChoice());
 
-    // Display
-    // Do player move
+
     for(int i = 0; i < 8; i++){
-    doPlayerMove(game);
-    if(game.checkWin(game.getPlayer())){std::cout<<game.getBoardDisplay()<<std::endl;won(); return WIN;}
-    // Display
-    std::cout<<game.getBoardDisplay()<<std::endl<<"Waiting for Computer's move . . . "<<std::endl;
-    // do an artificial wait timer (3-5 seconds)
-    platform_sleep(3);
-    // Do comp move
-    doCompMove(game);
-    // CheckWin
-    if(game.checkWin(game.getComputer())){std::cout<<game.getBoardDisplay()<<std::endl;lost(); return LOSS;}   
+        doPlayerMove(game);
+        if(game.checkWin(game.getPlayer())){
+            std::cout<<game.getBoardDisplay()<<std::endl;
+            won();
+        }
+
+        std::cout<<game.getBoardDisplay()<<std::endl
+
+        <<"Waiting for Computer's move . . . "<<std::endl;
+
+        platform_sleep(3);
+        doCompMove(game);
+
+        if(game.checkWin(game.getComputer())){
+            std::cout<<game.getBoardDisplay()<<std::endl;
+            lost();
+        }
     }
-    return 3;
 }
-
-
-void mainMenu(){
-    std::cout<<LOGIN_MESSAGE<<std::endl; // Display login message
-
-    std::cin>>username; // Take username from player
-}
-
 
 int main(){
-    // Display menu
-    mainMenu();
-    int choice = getMenuChoice();
 
-    switch(choice){
+    mainGameLoop();
 
-        case LEADERBOARD:{
-            displayLeaderBoard();
-        }   break;
-
-        case NEWGAME:{
-            mainGameLoop(username); // mainGameLoop( std::string username , Game previous_game );
-
-        }   break;
-};
-    // TODO : Take symbol choice
-    // TODO : Check for Username in save file dict
-    // TODO : if found data -> Retrieve data 
-    // TODO : ifnot -> create new entry with username and gamestatus as "INTERRUPTED"
-    std::cout<<"This program compiles and runs"<<std::endl;
-
-    // switch(status){
-    //     case WIN:
-    //         // won();
-    //     case LOSS:
-    //         // lost();
-    //     case INTERRUPT:
-    //         // interrupted();
-    //         // save individual game-board and player playing symbol with player data
-    // }
-
-    // TODO : File saving after WON, LOSS, TIE OR on program termination
-
+    std::cout<<"Program Terminated"<<std::endl;
     return 0;
 }
