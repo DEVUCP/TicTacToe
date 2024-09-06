@@ -1,0 +1,51 @@
+# Compiled object files
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+*.app
+
+# Debug and release builds
+build/
+Debug/
+Release/
+*.dSYM/
+
+# VSCode specific
+.vscode/
+.settings/
+*.code-workspace
+
+# Compiled Visual Studio Code extensions
+*.vsix
+.vscode/
+
+# CMake specific
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Visual Studio specific
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Misc
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+*.npm/
+*.yarn/
+*.lock
+*.cache
+*.vscode-test/
+*.history
